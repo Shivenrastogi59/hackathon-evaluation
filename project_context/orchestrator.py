@@ -63,7 +63,7 @@ async def process_file(file_path: str, agent_mode: str, semaphore: asyncio.Semap
                 await feedback.run(ctx)
 
         except Exception as e:
-            ctx.set_error(f"Unhandled error: {type(e)._name_}: {e}")
+            ctx.set_error(f"Unhandled error: {type(e).__name__}: {e}")
 
         display_consolidated_report(ctx)
         return ctx
@@ -86,7 +86,7 @@ async def main():
     contexts = [r for r in results if r is not None]
     if contexts:
         display_leaderboard(contexts)
-        # Save all consolidated reports to Excel
+         # Save all consolidated reports to Excel
         save_consolidated_reports_to_excel(contexts, "consolidated_reports.xlsx")
         # Save leaderboard to Excel
         save_leaderboard_to_excel(contexts, "leaderboard.xlsx")

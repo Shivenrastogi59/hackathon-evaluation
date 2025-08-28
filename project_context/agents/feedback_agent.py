@@ -1,6 +1,6 @@
 import os
 import asyncio
-from pydantic.v1 import BaseModel
+from pydantic.v1 import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
@@ -20,7 +20,7 @@ class FeedbackAgent:
         if not api_key:
             raise ValueError("OPENAI_API_KEY not found")
         self.api_key = api_key
-        self.model = os.getenv("OPENAI_MODEL_TEXT", os.getenv("OPENAI_MODEL", "gpt-4o"))
+        self.model = os.getenv("OPENAI_MODEL_TEXT", os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
         self.timeout_s = int(os.getenv("LLM_TIMEOUT_S", "90"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.seed = os.getenv("OPENAI_SEED")
@@ -56,15 +56,15 @@ Deck Text: {document_text}
                 await self.limiter.acquire()
                 gen_cfg = {"temperature": 0.1, "top_p": 0.0}
                 if self.seed is not None:
-                    gen_cfg["seed"] = int(self.seed) if str(self.seed).isdigit() else self.seed # type: ignore
-                llm = ChatOpenAI(model=self.model, api_key=self.api_key, **gen_cfg) # pyright: ignore[reportArgumentType]
+                    gen_cfg["seed"] = int(self.seed) if str(self.seed).isdigit() else self.seed
+                llm = ChatOpenAI(model=self.model, api_key=self.api_key, **gen_cfg)
                 resp = await asyncio.wait_for(llm.ainvoke(messages), self.timeout_s)
-                raw = extract_first_json_object(resp.content or "") or (resp.content or "") # pyright: ignore[reportArgumentType]
-                return self.parser.parse(raw) # type: ignore
+                raw = extract_first_json_object(resp.content or "") or (resp.content or "")
+                return self.parser.parse(raw)
             except Exception as e:
                 last_err = e
                 await asyncio.sleep(1.5 * (2 ** attempt))
-        raise last_err # pyright: ignore[reportGeneralTypeIssues]
+        raise last_err
 
     async def run(self, context):
         if context.evaluation_error:
@@ -79,7 +79,7 @@ Deck Text: {document_text}
                 document_text=context.raw_text or ""
             )
             parts = [{"type": "text", "text": prompt_text}]
-            parsed = await self._ainvoke_json([HumanMessage(content=parts)]) # pyright: ignore[reportArgumentType]
+            parsed = await self._ainvoke_json([HumanMessage(content=parts)])
             context.update_feedback_results(parsed)
             print("  -> Feedback complete.")
         except Exception as e:

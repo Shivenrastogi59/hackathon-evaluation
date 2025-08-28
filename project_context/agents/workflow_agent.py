@@ -13,8 +13,8 @@ class WorkflowAgent:
         if not api_key:
             raise ValueError("OPENAI_API_KEY not found")
         self.llm = ChatOpenAI(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
-            api_key=api_key, # pyright: ignore[reportArgumentType]
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            api_key=api_key,
             temperature=0.0,
             top_p=0.0,
         )
@@ -50,9 +50,9 @@ Format Instructions: {format_instructions}
             prompt_text = self.prompt.format(format_instructions=self.parser.get_format_instructions())
             message_parts = [{"type": "text", "text": prompt_text}]
             for img in context.images_base64:
-                message_parts.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img}"}}) # pyright: ignore[reportArgumentType]
-            response = self.llm.invoke([HumanMessage(content=message_parts)]) # pyright: ignore[reportArgumentType]
-            parsed_response = self.parser.parse(response.content) # pyright: ignore[reportArgumentType]
+                message_parts.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img}"}})
+            response = self.llm.invoke([HumanMessage(content=message_parts)])
+            parsed_response = self.parser.parse(response.content)
             context.update_workflow_results(parsed_response)
         except Exception as e:
             context.set_error(f"Workflow Agent failed: {e}")

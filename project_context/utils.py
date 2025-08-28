@@ -1,6 +1,8 @@
 # utils.py
 import os
 import re
+import sys
+import json
 import time
 import shutil
 import asyncio
@@ -11,8 +13,6 @@ import glob as _glob
 import subprocess
 import hashlib
 from typing import List, Tuple, Dict, Any, Optional
-
-import json
 
 from pptx import Presentation
 import pypdf
@@ -46,6 +46,7 @@ EVAL_WEIGHTS = {
     'Team Readiness': 15,
     'Potential Impact': 15
 }
+
 EVAL_ORDER = [
     'Innovation & Uniqueness',
     'Technical Feasibility',
@@ -340,8 +341,8 @@ def _extract_pdf_text_and_images(path: str) -> Tuple[str, List[str]]:
         # Embedded raster images
         try:
             for page in reader.pages:
-                if "/Resources" in page and "/XObject" in page["/Resources"]: # pyright: ignore[reportOperatorIssue]
-                    xobj = page["/Resources"]["/XObject"].get_object() # pyright: ignore[reportIndexIssue]
+                if "/Resources" in page and "/XObject" in page["/Resources"]:
+                    xobj = page["/Resources"]["/XObject"].get_object()
                     for obj in xobj:
                         o = xobj[obj]
                         if o.get("/Subtype") == "/Image":
@@ -436,7 +437,7 @@ def _extract_pptx_text_and_images(path: str) -> Tuple[str, List[str]]:
             for shape in slide.shapes:
                 if hasattr(shape, "text") and getattr(shape, "has_text_frame", False):
                     try:
-                        text_parts.append(shape.text) # pyright: ignore[reportAttributeAccessIssue]
+                        text_parts.append(shape.text)
                     except Exception:
                         pass
             for shape in slide.shapes:
@@ -503,21 +504,6 @@ def display_consolidated_report(context) -> None:
         print(f"  Suggestions: {context.feedback.get('suggestions','')}")
     print()
 
-    # JSON output
-    json_report = {
-        "team_name": context.team_name,
-        "scores": {k: context.scores.get(k, "-") for k in EVAL_WEIGHTS.keys()},
-        "total_raw": raw_total(context.scores),
-        "total_weighted": weighted_total(context.scores),
-        "summary": context.scoring_summary or "",
-        "workflow_analysis": {
-            "overall": overall
-        },
-        "feedback": context.feedback or {}
-    }
-    print("JSON format:")
-    print(json.dumps(json_report, indent=2))
-    
 def display_leaderboard(contexts: list) -> None:
     printable = []
     for c in contexts:
@@ -534,8 +520,6 @@ def display_leaderboard(contexts: list) -> None:
         print(f"{i:2d}. {name:30s} | weighted {status:>6s} | Inno {inz} | Tech {tech} | Impact {imp} | {os.path.basename(path)}")
     print("#############################\n")
 
-
-# ...existing code...
 
 def save_consolidated_reports_to_excel(contexts: list, filename: str):
     """Save all consolidated report data to an Excel file."""
@@ -622,4 +606,3 @@ def save_leaderboard_to_excel(contexts: list, filename: str):
 
     wb.save(filename)
     print(f"[Excel] Leaderboard saved to {filename}")
-

@@ -14,7 +14,7 @@ from pydantic.v1 import BaseModel, Field
 
 # Optional helpers
 try:
-    import pypdfium2 as pdfium # pyright: ignore[reportMissingImports]
+    import pypdfium2 as pdfium
 except Exception:
     pdfium = None
 
@@ -68,7 +68,7 @@ class WorkflowAnalysisAgent:
             model=self.vision_model,
             temperature=0.2,
             top_p=0.0,
-            api_key=api_key, # pyright: ignore[reportArgumentType]
+            api_key=api_key,
         )
         self.parser = JsonOutputParser(pydantic_object=WorkflowReport)
         self.prompt = self._create_prompt()

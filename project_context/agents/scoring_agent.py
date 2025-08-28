@@ -66,7 +66,7 @@ class _LLMInvoker:
         if not api_key:
             raise ValueError("OPENAI_API_KEY not found")
         self.api_key = api_key
-        self.model = os.getenv("OPENAI_MODEL_TEXT", os.getenv("OPENAI_MODEL", "gpt-4o"))
+        self.model = os.getenv("OPENAI_MODEL_TEXT", os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
         self.timeout_s = int(os.getenv("LLM_TIMEOUT_S", "90"))
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.seed = os.getenv("OPENAI_SEED")
