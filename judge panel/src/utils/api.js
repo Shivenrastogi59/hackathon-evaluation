@@ -185,3 +185,30 @@ export const logout = () => {
     localStorage.removeItem('judgeUsername');
     window.location.href = '/';
 };
+
+// Fetch PPT report by team name (from hackathon_evaluation.ppt_reports)
+export const getPptReport = async (teamName) => {
+    const response = await fetch(`${API_BASE_URL}/api/ppt-report/${encodeURIComponent(teamName)}`, {
+        headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        throw new Error(errorData.detail || 'Failed to fetch PPT report');
+    }
+
+    return response.json();
+};
+
+// Search PPT reports by team name (partial, case-insensitive)
+export const searchPptReports = async (teamNameQuery) => {
+    const url = `${API_BASE_URL}/api/ppt-reports?team_name=${encodeURIComponent(teamNameQuery)}`;
+    const response = await fetch(url, {
+        headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        throw new Error(errorData.detail || 'Failed to search PPT reports');
+    }
+    return response.json();
+};

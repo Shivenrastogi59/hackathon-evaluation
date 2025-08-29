@@ -4,6 +4,7 @@ import {
   Download
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getPptReport } from '../utils/api';
 import './EvaluateSubmission.css';
 
 const EvaluateSubmission = () => {
@@ -12,19 +13,22 @@ const EvaluateSubmission = () => {
   const selectedTeam = location.state?.selectedTeam;
   
   const [evaluation, setEvaluation] = useState({
-    innovation: 5,
-    problemRelevance: 5,
-    feasibility: 5,
-    techStackJustification: 5,
-    clarityOfSolution: 5,
-    presentationQuality: 5,
-    teamUnderstanding: 5,
+    problemSolutionFit: 5,
+    functionalityFeatures: 5,
+    technicalFeasibility: 5,
+    innovationCreativity: 5,
+    userExperience: 5,
+    impactValue: 5,
+    presentationDemoQuality: 5,
+    teamCollaboration: 5,
     finalRecommendation: '',
     feedback: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
+  const [pptReport, setPptReport] = useState(null);
+  const [pptReportError, setPptReportError] = useState('');
 
   // Load existing evaluation if available
   useEffect(() => {
@@ -32,6 +36,22 @@ const EvaluateSubmission = () => {
       loadExistingEvaluation(selectedTeam.team_id);
     }
   }, [selectedTeam]);
+
+  // Load PPT report by team name
+  useEffect(() => {
+    const fetchPpt = async () => {
+      if (!selectedTeam?.team_name) return;
+      try {
+        setPptReportError('');
+        const data = await getPptReport(selectedTeam.team_name);
+        setPptReport(data);
+      } catch (err) {
+        setPptReport(null);
+        setPptReportError(err.message || 'Failed to load PPT report');
+      }
+    };
+    fetchPpt();
+  }, [selectedTeam?.team_name]);
 
   const loadExistingEvaluation = async (teamId) => {
     try {
@@ -47,13 +67,14 @@ const EvaluateSubmission = () => {
       if (response.ok) {
         const existingEval = await response.json();
         setEvaluation({
-          innovation: existingEval.innovation || 5,
-          problemRelevance: existingEval.problem_relevance || 5,
-          feasibility: existingEval.feasibility || 5,
-          techStackJustification: existingEval.tech_stack_justification || 5,
-          clarityOfSolution: existingEval.clarity_of_solution || 5,
-          presentationQuality: existingEval.presentation_quality || 5,
-          teamUnderstanding: existingEval.team_understanding || 5,
+          problemSolutionFit: existingEval.problem_solution_fit || 5,
+          functionalityFeatures: existingEval.functionality_features || 5,
+          technicalFeasibility: existingEval.technical_feasibility || 5,
+          innovationCreativity: existingEval.innovation_creativity || 5,
+          userExperience: existingEval.user_experience || 5,
+          impactValue: existingEval.impact_value || 5,
+          presentationDemoQuality: existingEval.presentation_demo_quality || 5,
+          teamCollaboration: existingEval.team_collaboration || 5,
           finalRecommendation: existingEval.final_recommendation || '',
           feedback: existingEval.personalized_feedback || ''
         });
@@ -118,13 +139,14 @@ const EvaluateSubmission = () => {
         problem_statement: selectedTeam.problem_statement?.title || 'No problem statement',
         category: selectedTeam.problem_statement?.category || 'General',
         round_id: 1,
-        innovation: evaluation.innovation,
-        problem_relevance: evaluation.problemRelevance,
-        feasibility: evaluation.feasibility,
-        tech_stack_justification: evaluation.techStackJustification,
-        clarity_of_solution: evaluation.clarityOfSolution,
-        presentation_quality: evaluation.presentationQuality,
-        team_understanding: evaluation.teamUnderstanding,
+        problem_solution_fit: evaluation.problemSolutionFit,
+        functionality_features: evaluation.functionalityFeatures,
+        technical_feasibility: evaluation.technicalFeasibility,
+        innovation_creativity: evaluation.innovationCreativity,
+        user_experience: evaluation.userExperience,
+        impact_value: evaluation.impactValue,
+        presentation_demo_quality: evaluation.presentationDemoQuality,
+        team_collaboration: evaluation.teamCollaboration,
         personalized_feedback: evaluation.feedback
       };
 
@@ -148,7 +170,7 @@ const EvaluateSubmission = () => {
         setSubmitStatus('✅ Evaluation submitted successfully!');
         
         // Show success message
-        alert(`Evaluation submitted successfully!\nTotal Score: ${result.total_score}/70\nAverage Score: ${result.average_score}/10`);
+        alert(`Evaluation submitted successfully!\nWeighted Total: ${result.total_score}/100\nAverage Score: ${result.average_score}/10`);
         
         // Wait for 2 seconds to show success message, then navigate to dashboard
         setTimeout(() => {
@@ -187,13 +209,14 @@ const EvaluateSubmission = () => {
         problem_statement: selectedTeam.problem_statement?.title || 'No problem statement',
         category: selectedTeam.problem_statement?.category || 'General',
         round_id: 1,
-        innovation: evaluation.innovation,
-        problem_relevance: evaluation.problemRelevance,
-        feasibility: evaluation.feasibility,
-        tech_stack_justification: evaluation.techStackJustification,
-        clarity_of_solution: evaluation.clarityOfSolution,
-        presentation_quality: evaluation.presentationQuality,
-        team_understanding: evaluation.teamUnderstanding,
+        problem_solution_fit: evaluation.problemSolutionFit,
+        functionality_features: evaluation.functionalityFeatures,
+        technical_feasibility: evaluation.technicalFeasibility,
+        innovation_creativity: evaluation.innovationCreativity,
+        user_experience: evaluation.userExperience,
+        impact_value: evaluation.impactValue,
+        presentation_demo_quality: evaluation.presentationDemoQuality,
+        team_collaboration: evaluation.teamCollaboration,
         personalized_feedback: evaluation.feedback
       };
 
@@ -363,6 +386,55 @@ const EvaluateSubmission = () => {
           </div>
         </div>
 
+        {/* PPT Report Summary (from MongoDB ppt_reports) */}
+        <div className="metadata-section card">
+          <div className="metadata-header">
+            <div className="team-info">
+              <h2>PPT Report By AI</h2>
+              <p className="team-id">Auto-analysis from uploaded PPT report</p>
+            </div>
+          </div>
+          <div className="metadata-content">
+            {pptReportError && (
+              <div className="submit-status error">{pptReportError}</div>
+            )}
+            {pptReport ? (
+              <>
+                <div className="metadata-item">
+                  <h3>Summary</h3>
+                  <p>{pptReport.summary || 'No summary available'}</p>
+                </div>
+                <div className="metadata-item">
+                  <h3>Key Scores</h3>
+                  <div className="team-details-grid">
+                    <div className="detail-item"><strong>Total Weighted:</strong> {pptReport.scores?.total_weighted ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Total Raw:</strong> {pptReport.scores?.total_raw ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Problem Understanding:</strong> {pptReport.scores?.['Problem Understanding'] ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Innovation & Uniqueness:</strong> {pptReport.scores?.['Innovation & Uniqueness'] ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Technical Feasibility:</strong> {pptReport.scores?.['Technical Feasibility'] ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Implementation Approach:</strong> {pptReport.scores?.['Implementation Approach'] ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Team Readiness:</strong> {pptReport.scores?.['Team Readiness'] ?? 'N/A'}</div>
+                    <div className="detail-item"><strong>Potential Impact:</strong> {pptReport.scores?.['Potential Impact'] ?? 'N/A'}</div>
+                  </div>
+                </div>
+                <div className="metadata-item">
+                  <h3>Feedback Highlights</h3>
+                  <div className="project-details">
+                    <div className="detail-row"><strong>Positive:</strong> {pptReport.feedback_positive || 'N/A'}</div>
+                    <div className="detail-row"><strong>Criticism:</strong> {pptReport.feedback_criticism || 'N/A'}</div>
+                    <div className="detail-row"><strong>Technical:</strong> {pptReport.feedback_technical || 'N/A'}</div>
+                    <div className="detail-row"><strong>Suggestions:</strong> {pptReport.feedback_suggestions || 'N/A'}</div>
+                  </div>
+                </div>
+              </>
+            ) : !pptReportError ? (
+              <p>Loading PPT report...</p>
+            ) : (
+              <p>No PPT report found for this team.</p>
+            )}
+          </div>
+        </div>
+
         {/* Evaluation Form */}
         <form className="evaluation-form card" onSubmit={handleSubmit}>
           <div className="form-header">
@@ -372,13 +444,14 @@ const EvaluateSubmission = () => {
 
           <div className="parameters-grid">
             {[
-              { key: 'innovation', label: 'Innovation', description: 'Originality and creativity of the solution' },
-              { key: 'problemRelevance', label: 'Problem Relevance', description: 'How well the solution addresses the problem' },
-              { key: 'feasibility', label: 'Feasibility', description: 'Practical implementation potential' },
-              { key: 'techStackJustification', label: 'Tech Stack Justification', description: 'Appropriateness of chosen technologies' },
-              { key: 'clarityOfSolution', label: 'Clarity of Solution', description: 'How well the solution is explained' },
-              { key: 'presentationQuality', label: 'Presentation Quality', description: 'Professionalism and clarity of presentation' },
-              { key: 'teamUnderstanding', label: 'Team Understanding', description: 'Depth of team knowledge and expertise' }
+              { key: 'problemSolutionFit', label: 'Problem-Solution Fit (10%)', description: 'How well the prototype addresses the problem statement; alignment with ideation phase.' },
+              { key: 'functionalityFeatures', label: 'Functionality & Features (20%)', description: 'Prototype actually works; number of implemented features; handling of real-world cases.' },
+              { key: 'technicalFeasibility', label: 'Technical Feasibility & Robustness (20%)', description: 'System design, architecture, performance, scalability, basic security.' },
+              { key: 'innovationCreativity', label: 'Innovation & Creativity (15%)', description: 'Unique features, creative use of technology, disruptive potential.' },
+              { key: 'userExperience', label: 'User Experience (UI/UX) (15%)', description: 'Ease of use, visual clarity, accessibility, intuitiveness.' },
+              { key: 'impactValue', label: 'Impact & Value Proposition (10%)', description: 'Social/economic/environmental benefits; practical usefulness.' },
+              { key: 'presentationDemoQuality', label: 'Presentation & Demo Quality (5%)', description: 'Clarity of demo, ability to answer questions, professionalism.' },
+              { key: 'teamCollaboration', label: 'Team Collaboration (5%)', description: 'Execution of roles, solving challenges, collaboration.' }
             ].map((param) => (
               <div key={param.key} className="parameter-item">
                 <div className="parameter-header">

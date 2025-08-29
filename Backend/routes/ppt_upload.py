@@ -1,4 +1,5 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Path, Query
+import re
 from fastapi.responses import JSONResponse
 import pandas as pd
 import pymongo
@@ -148,6 +149,22 @@ class PPTReportHandler:
         if self.client:
             self.client.close()
 
+    def find_report_by_team_name(self, team_name: str):
+        """Find a single PPT report document by team name inside data.team_name"""
+        if self.collection is None:
+            return None
+        # Use case-insensitive exact match to be robust against casing/spacing
+        pattern = f"^{re.escape(team_name)}$"
+        return self.collection.find_one({"data.team_name": {"$regex": pattern, "$options": "i"}})
+
+    def find_reports_by_team_name_regex(self, team_name_query: str):
+        """Find multiple PPT report documents by case-insensitive partial match of team name"""
+        if self.collection is None:
+            return []
+        regex = {"$regex": team_name_query, "$options": "i"}
+        cursor = self.collection.find({"data.team_name": regex})
+        return list(cursor)
+
 @router.post("/upload-ppt-report")
 async def upload_ppt_report(file: UploadFile = File(...)):
     """
@@ -283,4 +300,108 @@ async def get_ppt_report_status():
             status_code=500, 
             detail="Internal server error occurred while fetching status"
         )
+
+
+@router.get("/ppt-report/{team_name}")
+async def get_ppt_report_by_team_name(
+    team_name: str = Path(..., description="Team name to fetch PPT report for"),
+):
+    """
+    Fetch a PPT report document from collection `ppt_reports` by data.team_name.
+    Returns the full stored `data` payload and metadata useful for judges.
+    """
+    try:
+        handler = PPTReportHandler()
+        if not handler.connect_to_mongodb():
+            raise HTTPException(status_code=500, detail="Failed to connect to database")
+
+        try:
+            doc = handler.find_report_by_team_name(team_name)
+            if not doc:
+                raise HTTPException(status_code=404, detail="PPT report not found for the given team name")
+
+            # Shape response: expose core fields under top-level
+            data = doc.get("data", {})
+            response = {
+                "team_name": data.get("team_name"),
+                "sheet_name": doc.get("sheet_name"),
+                "file_path": data.get("file_path"),
+                "scores": {
+                    "Problem Understanding": data.get("Problem Understanding"),
+                    "Innovation & Uniqueness": data.get("Innovation & Uniqueness"),
+                    "Technical Feasibility": data.get("Technical Feasibility"),
+                    "Implementation Approach": data.get("Implementation Approach"),
+                    "Team Readiness": data.get("Team Readiness"),
+                    "Potential Impact": data.get("Potential Impact"),
+                    "total_raw": data.get("total_raw"),
+                    "total_weighted": data.get("total_weighted"),
+                },
+                "summary": data.get("summary"),
+                "workflow_overall": data.get("workflow_overall"),
+                "feedback_positive": data.get("feedback_positive"),
+                "feedback_criticism": data.get("feedback_criticism"),
+                "feedback_technical": data.get("feedback_technical"),
+                "feedback_suggestions": data.get("feedback_suggestions"),
+                "upload_timestamp": doc.get("upload_timestamp").isoformat() if doc.get("upload_timestamp") else None,
+                "record_id": doc.get("record_id"),
+                "raw": data,
+            }
+            return JSONResponse(status_code=200, content=response)
+        finally:
+            handler.close_connection()
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred while fetching PPT report")
+
+
+@router.get("/ppt-reports")
+async def search_ppt_reports(
+    team_name: str = Query(..., description="Team name to search (case-insensitive, partial match)"),
+):
+    """
+    Search PPT reports by team name (partial, case-insensitive). Returns an array of matches.
+    """
+    try:
+        handler = PPTReportHandler()
+        if not handler.connect_to_mongodb():
+            raise HTTPException(status_code=500, detail="Failed to connect to database")
+
+        try:
+            docs = handler.find_reports_by_team_name_regex(team_name)
+            results = []
+            for doc in docs:
+                data = doc.get("data", {})
+                results.append({
+                    "team_name": data.get("team_name"),
+                    "sheet_name": doc.get("sheet_name"),
+                    "file_path": data.get("file_path"),
+                    "scores": {
+                        "Problem Understanding": data.get("Problem Understanding"),
+                        "Innovation & Uniqueness": data.get("Innovation & Uniqueness"),
+                        "Technical Feasibility": data.get("Technical Feasibility"),
+                        "Implementation Approach": data.get("Implementation Approach"),
+                        "Team Readiness": data.get("Team Readiness"),
+                        "Potential Impact": data.get("Potential Impact"),
+                        "total_raw": data.get("total_raw"),
+                        "total_weighted": data.get("total_weighted"),
+                    },
+                    "summary": data.get("summary"),
+                    "workflow_overall": data.get("workflow_overall"),
+                    "feedback_positive": data.get("feedback_positive"),
+                    "feedback_criticism": data.get("feedback_criticism"),
+                    "feedback_technical": data.get("feedback_technical"),
+                    "feedback_suggestions": data.get("feedback_suggestions"),
+                    "upload_timestamp": doc.get("upload_timestamp").isoformat() if doc.get("upload_timestamp") else None,
+                    "record_id": doc.get("record_id"),
+                })
+            return JSONResponse(status_code=200, content={"count": len(results), "results": results})
+        finally:
+            handler.close_connection()
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred while searching PPT reports")
 

@@ -12,13 +12,14 @@ class EvaluationCriteria(BaseModel):
     description: Optional[str]
 
 class JudgeEvaluationScore(BaseModel):
-    innovation: float = Field(..., ge=1, le=10, description="Innovation score (1-10)")
-    problem_relevance: float = Field(..., ge=1, le=10, description="Problem relevance score (1-10)")
-    feasibility: float = Field(..., ge=1, le=10, description="Feasibility score (1-10)")
-    tech_stack_justification: float = Field(..., ge=1, le=10, description="Tech stack justification score (1-10)")
-    clarity_of_solution: float = Field(..., ge=1, le=10, description="Clarity of solution score (1-10)")
-    presentation_quality: float = Field(..., ge=1, le=10, description="Presentation quality score (1-10)")
-    team_understanding: float = Field(..., ge=1, le=10, description="Team understanding score (1-10)")
+    problem_solution_fit: float = Field(..., ge=1, le=10, description="Problem-Solution Fit (1-10)")
+    functionality_features: float = Field(..., ge=1, le=10, description="Functionality & Features (1-10)")
+    technical_feasibility: float = Field(..., ge=1, le=10, description="Technical Feasibility & Robustness (1-10)")
+    innovation_creativity: float = Field(..., ge=1, le=10, description="Innovation & Creativity (1-10)")
+    user_experience: float = Field(..., ge=1, le=10, description="User Experience (UI/UX) (1-10)")
+    impact_value: float = Field(..., ge=1, le=10, description="Impact & Value Proposition (1-10)")
+    presentation_demo_quality: float = Field(..., ge=1, le=10, description="Presentation & Demo Quality (1-10)")
+    team_collaboration: float = Field(..., ge=1, le=10, description="Team Collaboration (1-10)")
 
 class TeamEvaluation(BaseModel):
     evaluation_id: str = Field(..., description="Unique evaluation identifier")
@@ -47,13 +48,14 @@ class EvaluationSummary(BaseModel):
     round_id: int
     total_evaluations: int
     average_total_score: float
-    average_innovation: float
-    average_problem_relevance: float
-    average_feasibility: float
-    average_tech_stack: float
-    average_clarity: float
-    average_presentation: float
-    average_team_understanding: float
+    average_problem_solution_fit: float
+    average_functionality_features: float
+    average_technical_feasibility: float
+    average_innovation_creativity: float
+    average_user_experience: float
+    average_impact_value: float
+    average_presentation_demo_quality: float
+    average_team_collaboration: float
     last_updated: datetime
 
 class JudgeEvaluationHistory(BaseModel):
@@ -74,46 +76,52 @@ judge_evaluation_history_collection = db["judge_evaluation_history"]
 # Initialize default evaluation criteria
 default_criteria = [
     {
-        "criteria_id": "innovation",
-        "name": "Innovation",
-        "weight": 1.0,
-        "description": "Originality and creativity of the solution"
+        "criteria_id": "problem_solution_fit",
+        "name": "Problem-Solution Fit",
+        "weight": 10.0,
+        "description": "How well the prototype addresses the problem statement; alignment with ideation phase."
     },
     {
-        "criteria_id": "problem_relevance",
-        "name": "Problem Relevance", 
-        "weight": 1.0,
-        "description": "How well the solution addresses the problem"
+        "criteria_id": "functionality_features",
+        "name": "Functionality & Features",
+        "weight": 20.0,
+        "description": "Prototype actually works; number of implemented features; handling of real-world cases."
     },
     {
-        "criteria_id": "feasibility",
-        "name": "Feasibility",
-        "weight": 1.0,
-        "description": "Practical implementation potential"
+        "criteria_id": "technical_feasibility",
+        "name": "Technical Feasibility & Robustness",
+        "weight": 20.0,
+        "description": "System design, architecture, performance, scalability, basic security."
     },
     {
-        "criteria_id": "tech_stack_justification",
-        "name": "Tech Stack Justification",
-        "weight": 1.0,
-        "description": "Appropriateness of chosen technologies"
+        "criteria_id": "innovation_creativity",
+        "name": "Innovation & Creativity",
+        "weight": 15.0,
+        "description": "Unique features, creative use of technology, disruptive potential."
     },
     {
-        "criteria_id": "clarity_of_solution",
-        "name": "Clarity of Solution",
-        "weight": 1.0,
-        "description": "How well the solution is explained"
+        "criteria_id": "user_experience",
+        "name": "User Experience (UI/UX)",
+        "weight": 15.0,
+        "description": "Prototype is easy to use, visually clear, accessible, intuitive."
     },
     {
-        "criteria_id": "presentation_quality",
-        "name": "Presentation Quality",
-        "weight": 1.0,
-        "description": "Professionalism and clarity of presentation"
+        "criteria_id": "impact_value",
+        "name": "Impact & Value Proposition",
+        "weight": 10.0,
+        "description": "Social/economic/environmental benefits; practical usefulness."
     },
     {
-        "criteria_id": "team_understanding",
-        "name": "Team Understanding",
-        "weight": 1.0,
-        "description": "Depth of team knowledge and expertise"
+        "criteria_id": "presentation_demo_quality",
+        "name": "Presentation & Demo Quality",
+        "weight": 5.0,
+        "description": "Clarity of demo, ability to answer judges’ questions, professional presentation."
+    },
+    {
+        "criteria_id": "team_collaboration",
+        "name": "Team Collaboration",
+        "weight": 5.0,
+        "description": "How well the team executed roles, solved challenges, and collaborated."
     }
 ]
 

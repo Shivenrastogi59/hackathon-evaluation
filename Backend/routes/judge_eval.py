@@ -39,28 +39,50 @@ async def submit_evaluation(
         # Generate unique evaluation ID
         evaluation_id = str(uuid.uuid4())
         
-        # Extract scores from the evaluation data
+        # Extract scores from the evaluation data (new 8-criteria)
         scores = JudgeEvaluationScore(
-            innovation=float(evaluation_data.get("innovation", 5)),
-            problem_relevance=float(evaluation_data.get("problem_relevance", 5)),
-            feasibility=float(evaluation_data.get("feasibility", 5)),
-            tech_stack_justification=float(evaluation_data.get("tech_stack_justification", 5)),
-            clarity_of_solution=float(evaluation_data.get("clarity_of_solution", 5)),
-            presentation_quality=float(evaluation_data.get("presentation_quality", 5)),
-            team_understanding=float(evaluation_data.get("team_understanding", 5))
+            problem_solution_fit=float(evaluation_data.get("problem_solution_fit", 5)),
+            functionality_features=float(evaluation_data.get("functionality_features", 5)),
+            technical_feasibility=float(evaluation_data.get("technical_feasibility", 5)),
+            innovation_creativity=float(evaluation_data.get("innovation_creativity", 5)),
+            user_experience=float(evaluation_data.get("user_experience", 5)),
+            impact_value=float(evaluation_data.get("impact_value", 5)),
+            presentation_demo_quality=float(evaluation_data.get("presentation_demo_quality", 5)),
+            team_collaboration=float(evaluation_data.get("team_collaboration", 5))
         )
         
-        # Calculate total and average scores
-        total_score = sum([
-            scores.innovation,
-            scores.problem_relevance,
-            scores.feasibility,
-            scores.tech_stack_justification,
-            scores.clarity_of_solution,
-            scores.presentation_quality,
-            scores.team_understanding
-        ])
-        average_score = total_score / 7
+        # Calculate weighted total based on rubric weights
+        weights = {
+            "problem_solution_fit": 10,
+            "functionality_features": 20,
+            "technical_feasibility": 20,
+            "innovation_creativity": 15,
+            "user_experience": 15,
+            "impact_value": 10,
+            "presentation_demo_quality": 5,
+            "team_collaboration": 5,
+        }
+        raw_scores = [
+            scores.problem_solution_fit,
+            scores.functionality_features,
+            scores.technical_feasibility,
+            scores.innovation_creativity,
+            scores.user_experience,
+            scores.impact_value,
+            scores.presentation_demo_quality,
+            scores.team_collaboration,
+        ]
+        average_score = sum(raw_scores) / 8
+        total_score = (
+            scores.problem_solution_fit * weights["problem_solution_fit"] +
+            scores.functionality_features * weights["functionality_features"] +
+            scores.technical_feasibility * weights["technical_feasibility"] +
+            scores.innovation_creativity * weights["innovation_creativity"] +
+            scores.user_experience * weights["user_experience"] +
+            scores.impact_value * weights["impact_value"] +
+            scores.presentation_demo_quality * weights["presentation_demo_quality"] +
+            scores.team_collaboration * weights["team_collaboration"]
+        ) / 10.0
         
         # Create evaluation object
         evaluation = TeamEvaluation(
@@ -124,13 +146,14 @@ async def save_evaluation_draft(
             evaluation_id = existing_draft["evaluation_id"]
             update_data = {
                 "scores": {
-                    "innovation": float(evaluation_data.get("innovation", 5)),
-                    "problem_relevance": float(evaluation_data.get("problem_relevance", 5)),
-                    "feasibility": float(evaluation_data.get("feasibility", 5)),
-                    "tech_stack_justification": float(evaluation_data.get("tech_stack_justification", 5)),
-                    "clarity_of_solution": float(evaluation_data.get("clarity_of_solution", 5)),
-                    "presentation_quality": float(evaluation_data.get("presentation_quality", 5)),
-                    "team_understanding": float(evaluation_data.get("team_understanding", 5))
+                    "problem_solution_fit": float(evaluation_data.get("problem_solution_fit", 5)),
+                    "functionality_features": float(evaluation_data.get("functionality_features", 5)),
+                    "technical_feasibility": float(evaluation_data.get("technical_feasibility", 5)),
+                    "innovation_creativity": float(evaluation_data.get("innovation_creativity", 5)),
+                    "user_experience": float(evaluation_data.get("user_experience", 5)),
+                    "impact_value": float(evaluation_data.get("impact_value", 5)),
+                    "presentation_demo_quality": float(evaluation_data.get("presentation_demo_quality", 5)),
+                    "team_collaboration": float(evaluation_data.get("team_collaboration", 5))
                 },
                 "personalized_feedback": evaluation_data.get("personalized_feedback", ""),
                 "evaluated_at": datetime.utcnow()
@@ -138,8 +161,18 @@ async def save_evaluation_draft(
             
             # Calculate scores
             scores = evaluation_data["scores"]
-            total_score = sum(scores.values())
-            average_score = total_score / 7
+            weights = {
+                "problem_solution_fit": 10,
+                "functionality_features": 20,
+                "technical_feasibility": 20,
+                "innovation_creativity": 15,
+                "user_experience": 15,
+                "impact_value": 10,
+                "presentation_demo_quality": 5,
+                "team_collaboration": 5,
+            }
+            total_score = sum([scores[k] * weights[k] for k in weights]) / 10.0
+            average_score = sum(scores.values()) / 8
             
             update_data["total_score"] = total_score
             update_data["average_score"] = round(average_score, 2)
@@ -159,17 +192,28 @@ async def save_evaluation_draft(
             evaluation_id = str(uuid.uuid4())
             
             scores = {
-                "innovation": float(evaluation_data.get("innovation", 5)),
-                "problem_relevance": float(evaluation_data.get("problem_relevance", 5)),
-                "feasibility": float(evaluation_data.get("feasibility", 5)),
-                "tech_stack_justification": float(evaluation_data.get("tech_stack_justification", 5)),
-                "clarity_of_solution": float(evaluation_data.get("clarity_of_solution", 5)),
-                "presentation_quality": float(evaluation_data.get("presentation_quality", 5)),
-                "team_understanding": float(evaluation_data.get("team_understanding", 5))
+                "problem_solution_fit": float(evaluation_data.get("problem_solution_fit", 5)),
+                "functionality_features": float(evaluation_data.get("functionality_features", 5)),
+                "technical_feasibility": float(evaluation_data.get("technical_feasibility", 5)),
+                "innovation_creativity": float(evaluation_data.get("innovation_creativity", 5)),
+                "user_experience": float(evaluation_data.get("user_experience", 5)),
+                "impact_value": float(evaluation_data.get("impact_value", 5)),
+                "presentation_demo_quality": float(evaluation_data.get("presentation_demo_quality", 5)),
+                "team_collaboration": float(evaluation_data.get("team_collaboration", 5))
             }
             
-            total_score = sum(scores.values())
-            average_score = total_score / 7
+            weights = {
+                "problem_solution_fit": 10,
+                "functionality_features": 20,
+                "technical_feasibility": 20,
+                "innovation_creativity": 15,
+                "user_experience": 15,
+                "impact_value": 10,
+                "presentation_demo_quality": 5,
+                "team_collaboration": 5,
+            }
+            total_score = sum([scores[k] * weights[k] for k in weights]) / 10.0
+            average_score = sum(scores.values()) / 8
             
             draft_evaluation = TeamEvaluation(
                 evaluation_id=evaluation_id,
@@ -301,13 +345,14 @@ async def update_evaluation_summary(team_id: str, round_id: int):
         # Calculate averages
         total_evaluations = len(evaluations)
         avg_total_score = sum(eval["total_score"] for eval in evaluations) / total_evaluations
-        avg_innovation = sum(eval["scores"]["innovation"] for eval in evaluations) / total_evaluations
-        avg_problem_relevance = sum(eval["scores"]["problem_relevance"] for eval in evaluations) / total_evaluations
-        avg_feasibility = sum(eval["scores"]["feasibility"] for eval in evaluations) / total_evaluations
-        avg_tech_stack = sum(eval["scores"]["tech_stack_justification"] for eval in evaluations) / total_evaluations
-        avg_clarity = sum(eval["scores"]["clarity_of_solution"] for eval in evaluations) / total_evaluations
-        avg_presentation = sum(eval["scores"]["presentation_quality"] for eval in evaluations) / total_evaluations
-        avg_team_understanding = sum(eval["scores"]["team_understanding"] for eval in evaluations) / total_evaluations
+        avg_problem_solution_fit = sum(eval["scores"]["problem_solution_fit"] for eval in evaluations) / total_evaluations
+        avg_functionality_features = sum(eval["scores"]["functionality_features"] for eval in evaluations) / total_evaluations
+        avg_technical_feasibility = sum(eval["scores"]["technical_feasibility"] for eval in evaluations) / total_evaluations
+        avg_innovation_creativity = sum(eval["scores"]["innovation_creativity"] for eval in evaluations) / total_evaluations
+        avg_user_experience = sum(eval["scores"]["user_experience"] for eval in evaluations) / total_evaluations
+        avg_impact_value = sum(eval["scores"]["impact_value"] for eval in evaluations) / total_evaluations
+        avg_presentation_demo_quality = sum(eval["scores"]["presentation_demo_quality"] for eval in evaluations) / total_evaluations
+        avg_team_collaboration = sum(eval["scores"]["team_collaboration"] for eval in evaluations) / total_evaluations
         
         # Get team name from first evaluation
         team_name = evaluations[0]["team_name"]
@@ -318,13 +363,14 @@ async def update_evaluation_summary(team_id: str, round_id: int):
             "round_id": round_id,
             "total_evaluations": total_evaluations,
             "average_total_score": round(avg_total_score, 2),
-            "average_innovation": round(avg_innovation, 2),
-            "average_problem_relevance": round(avg_problem_relevance, 2),
-            "average_feasibility": round(avg_feasibility, 2),
-            "average_tech_stack": round(avg_tech_stack, 2),
-            "average_clarity": round(avg_clarity, 2),
-            "average_presentation": round(avg_presentation, 2),
-            "average_team_understanding": round(avg_team_understanding, 2),
+            "average_problem_solution_fit": round(avg_problem_solution_fit, 2),
+            "average_functionality_features": round(avg_functionality_features, 2),
+            "average_technical_feasibility": round(avg_technical_feasibility, 2),
+            "average_innovation_creativity": round(avg_innovation_creativity, 2),
+            "average_user_experience": round(avg_user_experience, 2),
+            "average_impact_value": round(avg_impact_value, 2),
+            "average_presentation_demo_quality": round(avg_presentation_demo_quality, 2),
+            "average_team_collaboration": round(avg_team_collaboration, 2),
             "last_updated": datetime.utcnow()
         }
         
